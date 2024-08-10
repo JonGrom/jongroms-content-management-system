@@ -1,4 +1,21 @@
+//Require packages
 const inquirer = require('inquirer')
+const { Pool } = require('pg')
+
+//Setup pg Pool conncection to database
+const pool = new Pool(
+    {
+        user: '',
+        password: '',
+        host: 'localhost',
+        database: 'employees_db'
+    },
+    console.log('Connected to database')
+)
+
+pool.connect()
+
+
 
 //Question tree:
 
@@ -17,10 +34,14 @@ const inquirer = require('inquirer')
 //     {type: 'list', message: 'Choose a shape for your logo!', name: "shape", choices: ['circle', 'square', 'triangle']},
 //     {type: 'input', message: 'What color is the shape (by name or hexcode digits)?', name: "shapeColor"},}
 async function getEmployees(){
-    //db queries
+    //Get all employees
+    pool.query('SELECT * FROM employees', function (err, {rows}) {
+        err ? console.error(err) : console.log(rows);
+    });
 }
 
-async function addEmployee(f_name, l_name, role){
+async function addEmployee(){
+    //Get employee data from 
     const response = await inquirer.prompt([
         {
             type: 'input',
@@ -40,11 +61,14 @@ async function addEmployee(f_name, l_name, role){
         }
     ])
     const { f_name, l_name, role } = response
-    //db post employee
+    //POST employee into database
+    pool.query(`INSERT INTO employees (id, ${f_name}, ${l_name}, ${role}`, function (err) {
+        err ? console.error(err) : console.log('employee added');
+    });
 }
 
 async function updateEmployeeRole(){
-    //db get employees and roles
+    pool.query(``)
     const response = await inquirerprompt([
         {
             list: 'input',
@@ -65,6 +89,9 @@ async function updateEmployeeRole(){
 
 async function getRoles(){
     //db get roles 
+    pool.query('SELECT * FROM roles', function (err, {rows}) {
+        err ? console.error(err) : console.log(rows);
+    });
 }
 
 async function addRole(){
@@ -86,6 +113,9 @@ async function addRole(){
 }
 async function getDepartments(){
     //db get departments
+    pool.query('SELECT * FROM departments', function (err, {rows}) {
+        err ? console.error(err) : console.log(rows);
+    });
 }
 async function addDepartment(){
     const response = await inquirer.prompt(
@@ -104,7 +134,7 @@ async function init(){
             type: 'list',
             message: 'What would you like to do?',
             name: 'option',
-            choices: ['View All Employees', 'Add Employees', 'Update Employee Role', 'Update Employee Manager!', 'View all Roles', 'Add Roll', 'View All Departments', 'Add Department'],
+            choices: ['View All Employees', 'Add Employee', 'Update Employee Role', 'Update Employee Manager!', 'View All Roles', 'Add Roll', 'View All Departments', 'Add Department'],
         }
     );
     const { option } = response;
@@ -123,7 +153,7 @@ async function init(){
         console.log('doom')
 
     }
-    else if (option == 'View all Roles'){
+    else if (option == 'View All Roles'){
         console.log('ding')
         getRoles()
     }
@@ -139,8 +169,8 @@ async function init(){
         console.log('do')
         addDepartment()
     }
-    
-    
+    //include exit??
+    init()
 }
 
 //begin program
