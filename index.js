@@ -35,13 +35,13 @@ pool.connect()
 //     {type: 'input', message: 'What color is the shape (by name or hexcode digits)?', name: "shapeColor"},}
 async function getEmployees(){
     //Get all employees
-    pool.query('SELECT * FROM employees', function (err, {rows}) {
-        err ? console.error(err) : console.log(rows);
-    });
+    const data = await pool.query('SELECT employees.id, f_name AS First_Name , l_name AS Last_Name, roles.name AS Title, departments.name AS Department, salary AS Salary FROM employees JOIN roles ON employees.roles_id = roles.id JOIN departments ON roles.departments_id = departments.id;')
+    const { rows } = data
+    console.table(rows)
 }
 
 async function addEmployee(){
-    const data = await pool.query(`SELECT name, id FROM roles`)
+    const data = await pool.query(`SELECT name, id FROM roles`, )
     const { rows } = data
     console.log(rows)
     console.log(rows.id)
@@ -74,48 +74,61 @@ async function addEmployee(){
     const roleId = rolesMap[role]
     //POST employee into database
     pool.query(`INSERT INTO employees (f_name, l_name, roles_id) VALUES ('${f_name}', '${l_name}', '${roleId}');`, function (err) {
-        err ? console.error(err) : console.log('employee added');
+        err ? console.error(err) : console.log('Employee added');
     });
 }
 
 async function updateEmployeeRole(){
-    pool.query(``)
-    const response = await inquirerprompt([
+    const empList = await pool.query(`SELECT f_name, l_name, id FROM employees`)
+    const employees = empList.rows.map((employee) => `${employee.f_name} ${employee.l_name}`)
+    let empMap = {}
+    empList.rows.forEach((employee) => {
+        (empMap[`${employee.f_name} ${employee.l_name}`] = employee.id)
+    })
+    const rolesList = await pool.query(`SELECT name, id FROM roles`)
+    const roles = rolesList.rows.map((row) => row.name)
+    let rolesMap = {}
+    rolesList.rows.forEach((role) => {
+        (rolesMap[role.name] = role.id)
+    })
+    const response = await inquirer.prompt([
         {
-            list: 'input',
+            type: 'list',
             message: 'Which employee?',
             name: 'employee',
-            choices: ['employees!'],
+            choices: employees,
         },
         {
-            list: 'input',
+            type: 'list',
             message: 'What is the new role of the employee?',
             name: 'role',
-            choices: ['roles!'],
+            choices: roles,
         }
     ])
     const { employee, role } = response
-    //db update role
+    const employeeId = empMap[employee]
+    const roleId = rolesMap[role]
+
+    pool.query(`UPDATE employees SET roles_id = ${roleId} WHERE employees.id = ${employeeId}`)
+    // UPDATE employees SET roles_id = 6 WHERE employees.id = 2
 }
 
 async function getRoles(){
     //db get roles 
-    pool.query('SELECT * FROM roles', function (err, {rows}) {
-        err ? console.error(err) : console.log(rows);
-    });
+    const data = await pool.query('SELECT roles.id, roles.name AS Role, departments.name AS Department, salary as Salary FROM roles JOIN departments ON roles.departments_id = departments.id;')
+    const { rows } = data
+    console.table(rows)
 }
 
 async function addRole(){
     //db get departments
     const data = await pool.query(`SELECT name, id FROM departments`)
     const { rows } = data
-    console.log(rows)
     let departmentsMap = {}
     rows.forEach((department) => {
         (departmentsMap[department.name] = department.id)
     })
     const departments = rows.map((department) => department.name)
-    console.log(departments)
     const response = await inquirer.prompt([
         {
             type: 'input',
@@ -140,14 +153,14 @@ async function addRole(){
     const departmentId = departmentsMap[department]
     //POST employee into database
     pool.query(`INSERT INTO roles (name, salary, departments_id) VALUES ('${role}', '${salary}', '${departmentId}');`, function (err) {
-        err ? console.error(err) : console.log('employee added');
+        err ? console.error(err) : console.log('Role added');
     });
 }
 async function getDepartments(){
     //db get departments
-    pool.query('SELECT * FROM departments', function (err, {rows}) {
-        err ? console.error(err) : console.log(rows);
-    });
+    const data = await pool.query('SELECT departments.id, departments.name AS Department FROM departments;')
+    const { rows } = data
+    console.table(rows)
 }
 async function addDepartment(){
     const response = await inquirer.prompt(
@@ -160,7 +173,7 @@ async function addDepartment(){
     const { department } = response
     //db post department
     pool.query(`INSERT INTO departments (name) VALUES ('${department}')`, function (err) {
-        err ? console.error(err) : console.log('employee added');
+        err ? console.error(err) : console.log('Department added');
     });
 }
 
