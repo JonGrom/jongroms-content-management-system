@@ -41,7 +41,17 @@ async function getEmployees(){
 }
 
 async function addEmployee(){
-    //Get employee data from 
+    const data = await pool.query(`SELECT name, id FROM roles`)
+    const { rows } = data
+    console.log(rows)
+    console.log(rows.id)
+    let rolesMap = {}
+    rows.forEach((role) => {
+        (rolesMap[role.name] = role.id)
+    })
+    console.log(rolesMap)
+    const roles = rows.map((role) => role.name)
+    console.log(roles)
     const response = await inquirer.prompt([
         {
             type: 'input',
@@ -54,15 +64,16 @@ async function addEmployee(){
             name: 'l_name',
         },
         {
-            list: 'input',
+            type: 'list',
             message: 'What is the role of the employee?',
             name: 'role',
-            choices: ['roles!'],
+            choices: roles,
         }
     ])
     const { f_name, l_name, role } = response
+    const roleId = rolesMap[role]
     //POST employee into database
-    pool.query(`INSERT INTO employees (id, ${f_name}, ${l_name}, ${role}`, function (err) {
+    pool.query(`INSERT INTO employees (f_name, l_name, roles_id) VALUES ('${f_name}', '${l_name}', '${roleId}');`, function (err) {
         err ? console.error(err) : console.log('employee added');
     });
 }
@@ -96,6 +107,15 @@ async function getRoles(){
 
 async function addRole(){
     //db get departments
+    const data = await pool.query(`SELECT name, id FROM departments`)
+    const { rows } = data
+    console.log(rows)
+    let departmentsMap = {}
+    rows.forEach((department) => {
+        (departmentsMap[department.name] = department.id)
+    })
+    const departments = rows.map((department) => department.name)
+    console.log(departments)
     const response = await inquirer.prompt([
         {
             type: 'input',
@@ -103,13 +123,25 @@ async function addRole(){
             name: 'role',
         },
         {
-            list: 'input',
-            message: 'What is the new role of the employee?',
+            type: 'input',
+            message: 'What is the salary of this role?',
+            name: 'salary',
+        },
+        {
+            type: 'list',
+            message: 'To what department does this role belong?',
             name: 'department',
-            choices: ['dapartments!'],
+            choices: departments,
         }
+        
     ]);
-    //db post role
+    //db post department
+    const { role, salary, department } = response
+    const departmentId = departmentsMap[department]
+    //POST employee into database
+    pool.query(`INSERT INTO roles (name, salary, departments_id) VALUES ('${role}', '${salary}', '${departmentId}');`, function (err) {
+        err ? console.error(err) : console.log('employee added');
+    });
 }
 async function getDepartments(){
     //db get departments
@@ -125,7 +157,11 @@ async function addDepartment(){
             name: 'department',
         }
     );
+    const { department } = response
     //db post department
+    pool.query(`INSERT INTO departments (name) VALUES ('${department}')`, function (err) {
+        err ? console.error(err) : console.log('employee added');
+    });
 }
 
 async function init(){
@@ -139,15 +175,15 @@ async function init(){
     );
     const { option } = response;
     if (option == 'View All Employees'){
-        getEmployees()
+        await getEmployees()
     }
     else if (option == 'Add Employee'){
         console.log('doop')
-        addEmployee()
+        await addEmployee()
     }
     else if (option == 'Update Employee Role'){
         console.log('datta')
-        updateEmployeeRole()
+        await updateEmployeeRole()
     }
     else if (option == 'Update Employee Manager!'){
         console.log('doom')
@@ -155,19 +191,19 @@ async function init(){
     }
     else if (option == 'View All Roles'){
         console.log('ding')
-        getRoles()
+        await getRoles()
     }
     else if (option == 'Add Roll'){
         console.log('dot')
-        addRole()
+        await addRole()
     }
     else if (option == 'View All Departments'){
         console.log('didlledy')
-        getDepartments()
+        await getDepartments()
     }
     else if (option == 'Add Department'){
         console.log('do')
-        addDepartment()
+        await addDepartment()
     }
     //include exit??
     init()
